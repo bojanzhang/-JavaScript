@@ -60,11 +60,12 @@ function EventAggregator() {
         })[0];
 
     }
+
     // 发布
-    this.publish = function (eventName,eventArgs) {
+    this.publish = function (eventName, eventArgs) {
         let event = getEvent(eventName);
 
-        if(!event) {
+        if (!event) {
             event = new Event(eventName);
             events.push(event);
         }
@@ -73,18 +74,49 @@ function EventAggregator() {
     };
 
     // 订阅
-    this.subscribe = function (eventName,handler) {
+    this.subscribe = function (eventName, handler) {
         let event = getEvent(eventName);
 
-        if(!event) {
+        if (!event) {
             event = new Event(eventName);
             events.push(event);
         }
         event.addHandler(handler);
-        
+
     };
 
 }
+
+// 商品
+function Product(id, description) {
+    this.getId = function () {
+        return id;
+    }
+
+    this.getDescription = function () {
+        return description;
+    };
+}
+
+// Cart addItem 的function 需要发布一个itemAdd事件，将item 传递过去
+function Cart(eventAggregator) {
+    let items = [];
+    this.addItem = function (item) {
+        items.push(item);
+        eventAggregator.publish("itemAdd", item);
+    };
+}
+
+/**
+ *CartController 主要接收Cart 对象和事件聚合器，
+ * 通过订阅itemAdd事件，来添加一个li元素,
+ * 通过订阅productSelected事件来添加product
+ * @constructor
+ */
+function CartController(cart, eventAggregator) {
+
+}
+
 
 
 
