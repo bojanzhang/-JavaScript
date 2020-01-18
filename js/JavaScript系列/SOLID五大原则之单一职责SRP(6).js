@@ -28,26 +28,29 @@ function Event(name) {
     this.getName = function () {
         return name;
     }
+    // 添加事件处理器
     this.addHandler = function (handler) {
         handlers.push(handler);
     };
 
+    // 删除事件处理器
     this.removeHandler = function (handler) {
         for (let i = 0; i < handlers.length; i++) {
             if (handlers[i] == handler) {
                 handlers.splice(i, 1);
                 break;
             }
-
         }
-
     };
 
+    /**
+     *  触发事件处理
+     * @param eventArgs 事件参数
+     */
     this.fire = function (eventArgs) {
         handlers.forEach(function (h) {
             h(eventArgs);
         });
-
     };
 }
 
@@ -61,7 +64,11 @@ function EventAggregator() {
 
     }
 
-    // 发布
+    /**
+     *  事件发布
+      * @param eventName 事件名称
+     * @param eventArgs  传入事件的参数
+     */
     this.publish = function (eventName, eventArgs) {
         let event = getEvent(eventName);
 
@@ -103,7 +110,7 @@ function Cart(eventAggregator) {
     let items = [];
     this.addItem = function (item) {
         items.push(item);
-        eventAggregator.publish("itemAdd", item);
+        eventAggregator.publish("itemAdded", item);
     };
 }
 
@@ -114,8 +121,60 @@ function Cart(eventAggregator) {
  * @constructor
  */
 function CartController(cart, eventAggregator) {
-
+    // 订阅添加事件
+    eventAggregator.subtract("itemAdded", function (eventArgs) {
+        let newItem = $("<li></li>").html(eventArgs.getDeclaration())
+            .attr("id-cart", eventArgs.getId()).appendTo("#cart");
+    });
+    // 订阅商品选中事件
+    eventAggregator.subtract("productSelected", function (eventArgs) {
+        cart.addItem(eventArgs.product);
+    });
 }
+
+// repository 获取数据， 然后 暴露get数据的方法
+function productRepository() {
+    let products = [new Product(1, "Star Wars Lego Ship"),
+        new Product(2, "Barbie Doll"),
+        new Product(3, "Remote Control Airplane")];
+    this.getProducts = function () {
+        return products;
+    }
+}
+
+// ProductController 定义了onProductSelect 方法，触发productSelect事件
+function ProductController(eventAggregator, productRepository) {
+    let products = productRepository.getProducts();
+
+    function onProduceSelected() {
+        let productId = $(this).attr("id");
+        let product = $.grep(products, function (x) {
+            return x.getId() == productId;
+        })[0];
+        // 发布商品选中事件
+        eventAggregator.publish("productSelected", {product: product});
+    }
+
+    products.forEach(function (item) {
+        let newItem = $("<li></li>").html(item.getDescription())
+            .attr("id", item.getId())
+            .dbclick(onProduceSelected)
+            .appendTo("#products");
+    });
+}
+
+/**
+ * 最后执行的内容, 需在文档加载完毕之后执行
+ */
+(function () {
+    let eventAggregator = new EventAggregator(),
+        cart = new Cart(eventAggregator),
+        cartController = new CartController(cart, eventAggregator),
+        productRepository = new productRepository(),
+        productController = new ProductController(eventAggregator, productRepository.getProducts());
+}());
+
+
 
 
 
